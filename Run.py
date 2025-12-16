@@ -54,7 +54,6 @@ async def scrape_product(semaphore, context, sku, url):
 
 async def main():
     semaphore = asyncio.Semaphore(CONCURRENT_PAGES)
-    results = []
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=False)  # debug mode
@@ -66,9 +65,8 @@ async def main():
             for row in reader:
                 tasks.append(scrape_product(semaphore, context, row["sku"], row["url"]))
 
-        for task in asyncio.as_completed(tasks):
-            results.append(await task)
-            await asyncio.sleep(random.uniform(0.5, 1.5))
+        # Use asyncio.gather to preserve input order
+        results = await asyncio.gather(*tasks)
 
         await browser.close()
 
